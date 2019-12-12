@@ -456,6 +456,10 @@ c
            write(100,*) 9 !Farfield
          elseif(ntag(nf).eq.2) then
            write(100,*) 0 !Interior
+         elseif(ntag(nf).eq.3) then
+           write(100,*) 12 !Periodic Downstream
+         elseif(ntag(nf).eq.4) then
+           write(100,*) 12 !Periodic Upstream
          endif
        enddo
        close(100)
@@ -465,17 +469,16 @@ c
       do nf=1,nfaces
         if(ntag(nf).eq.-2) then
           write(100,*) 1,0
-!          if(ntag(nf-1).eq.-2) then
-!            write(100,*) -1,0
-!          else
-!            write(100,*) 1,0 !Symmetry
-!          endif
         elseif(ntag(nf).eq.-1.or.ntag(nf).eq.0) then
           write(100,*) 4,0 !Wall
         elseif(ntag(nf).eq.1) then
           write(100,*) 2,0 !Farfield
         elseif(ntag(nf).eq.2) then
           write(100,*) 0,0 !Interior
+        elseif(ntag(nf).eq.3) then
+          write(100,*) 5,0 !Periodic Downstrean
+        elseif(ntag(nf).eq.4) then
+          write(100,*) 6,0 !Periodic Upstream
         endif
       enddo
       close(100)
