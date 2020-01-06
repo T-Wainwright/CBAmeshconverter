@@ -14,14 +14,15 @@ c
       INTEGER,DIMENSION(:,:),ALLOCATABLE:: nfacecell,ncellfaces,nvf
       INTEGER,DIMENSION(:),ALLOCATABLE::
      &            i1tag,i2tag,j1tag,j2tag,k1tag,k2tag,nhalofaces,
-     &            bound,ntag,cellnum,invec1,invec2,nptsi,nptsj,nptsk
+     &            bound,ntag,cellnum,invec1,invec2,nptsi,nptsj,nptsk,
+     &            nfacescell 
 !
       DOUBLE PRECISION:: dis,dx,dy,dz,xx,yy,zz,vnum
 !
       INTEGER:: i,j,k,nc,nsym,nii,njj,nkk,nimax,njmax,nkmax,nblock,
      &          ii1,ii2,ii3,ic,nff,nf,i2,nn,i1,nboundtag,nvtot,nb,
      &          icommon,imatch,NCELLS,NFACES,NVERTS,nv,nv1,nv2,nv3,nv4,
-     &          ncellshalo
+     &          ncellshalo,nifaces,nijfaces
 !
        CHARACTER*80:: gridfile
 !
@@ -90,6 +91,7 @@ c
       ALLOCATE(bound(0:MI*MJ*MK*MB))
       ALLOCATE(ntag(0:MI*MJ*MK*MB*6))
       ALLOCATE(cellnum(0:MI*MJ*MK*MB))
+      ALLOCATE(nfacescell(0:MI*MJ*MK*MB))
 !
       bound=0
       nfacecell=-100
@@ -191,9 +193,11 @@ c
                   if(dis.lt.0.000000001d0) then
                     numvert(i,j,k,nb)=nv1
                     icommon=1
+                    GO TO 399 
                   endif
                 ENDIF
               ENDDO
+399     CONTINUE 
               if(icommon.eq.0) then
                 nv=nv+1
                 xv(nv)=x(i,j,k,nb)
@@ -246,16 +250,13 @@ c
 259   format(3f18.12)
 333   format(9i9)
 !
-      open(359,file='cellfacedata.dat')
+      open(359,file='cellfacedataI.dat')
       write(359,*) ncells
       do nb=1,nblock
       do k=1,nptsk(nb)-1
         do j=1,nptsj(nb)-1
           do i=1,nptsi(nb)-1
             write(359,333) numcell(i,j,k,nb),6,4
-
-            ! I_faces
-            ! I-1 face
             write(359,333)
      &        numvert(i-1,j-1,k-1,nb),numvert(i-1,j-1,k,nb),
      &        numvert(i-1,j,k,nb),numvert(i-1,j,k-1,nb)
@@ -264,7 +265,6 @@ c
             else
               write(359,333) 2
             endif
-            ! I face
             write(359,333)
      &        numvert(i,j-1,k-1,nb),numvert(i,j,k-1,nb),
      &        numvert(i,j,k,nb),numvert(i,j-1,k,nb)
@@ -273,9 +273,19 @@ c
             else
               write(359,333) 2
             endif
-
-            ! J_faces
-            ! J-1 face
+          enddo
+        enddo
+      enddo
+      enddo
+      close(359)
+!
+      open(359,file='cellfacedataJ.dat')
+      write(359,*) ncells
+      do nb=1,nblock
+      do k=1,nptsk(nb)-1
+        do j=1,nptsj(nb)-1
+          do i=1,nptsi(nb)-1
+            write(359,333) numcell(i,j,k,nb),6,4
             write(359,333)
      &        numvert(i-1,j-1,k-1,nb),numvert(i,j-1,k-1,nb),
      &        numvert(i,j-1,k,nb),numvert(i-1,j-1,k,nb)
@@ -284,7 +294,6 @@ c
             else
               write(359,333) 2
             endif
-            ! J face
             write(359,333)
      &        numvert(i-1,j,k-1,nb),numvert(i-1,j,k,nb),
      &        numvert(i,j,k,nb), numvert(i,j,k-1,nb)
@@ -293,9 +302,19 @@ c
               else
                 write(359,333) 2
               endif
-
-            ! K_faces
-            ! K-1 face
+          enddo
+        enddo
+      enddo
+      enddo
+      close(359)
+!
+      open(359,file='cellfacedataK.dat')
+      write(359,*) ncells
+      do nb=1,nblock
+      do k=1,nptsk(nb)-1
+        do j=1,nptsj(nb)-1
+          do i=1,nptsi(nb)-1
+            write(359,333) numcell(i,j,k,nb),6,4
             write(359,333)
      &        numvert(i-1,j-1,k-1,nb),numvert(i-1,j,k-1,nb),
      &        numvert(i,j,k-1,nb),numvert(i,j-1,k-1,nb)
@@ -304,7 +323,6 @@ c
               else
                 write(359,333) 2
               endif
-              ! K face
             write(359,333)
      &        numvert(i-1,j-1,k,nb),numvert(i,j-1,k,nb),
      &        numvert(i,j,k,nb),numvert(i-1,j,k,nb)
@@ -325,13 +343,14 @@ c
       ALLOCATE(invec2(4))
 !
       nf=0
+      nfacescell=0 
 
-      open(359,file='cellfacedata.dat')
+      open(359,file='cellfacedataI.dat')
       read(359,*) ncells
       do nc=1,ncells
          read(359,*) cellnum(nc),i1,i2
 !********************
-         do nn=1,6
+         do nn=1,2
 !********************
          read(359,*) nv4,nv3,nv2,nv1
          read(359,*) nboundtag
@@ -342,16 +361,18 @@ c
            nvf(nf,3)=nv3
            nvf(nf,4)=nv4
            nfacecell(nf,1)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
            ntag(nf)=nboundtag
          else
            imatch=0
            if(nboundtag.eq.2) then
-           do nff=1,nf
               invec1(1)=nv1
               invec1(2)=nv2
               invec1(3)=nv3
               invec1(4)=nv4
               call isort(invec1,4)
+           do nff=1,nf
               invec2(1)=nvf(nff,1)
               invec2(2)=nvf(nff,2)
               invec2(3)=nvf(nff,3)
@@ -362,10 +383,14 @@ c
      &           invec1(3).eq.invec2(3).and.invec1(4).eq.invec2(4)) then
 
                 nfacecell(nff,2)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
                 ntag(nff)=nboundtag
                 imatch=1
+                GO TO 336 
               endif
            enddo
+336     CONTINUE 
            endif
               if(imatch.eq.0) then
                 nf=nf+1
@@ -374,6 +399,8 @@ c
                 nvf(nf,3)=nv3
                 nvf(nf,4)=nv4
                 nfacecell(nf,1)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
                 ntag(nf)=nboundtag
               endif
          endif
@@ -381,12 +408,125 @@ c
          enddo
 !********************
        enddo
+      close(359)
+!
+      NIFACES=nf 
+!
+      open(359,file='cellfacedataJ.dat')
+      read(359,*) ncells
+      do nc=1,ncells
+         read(359,*) cellnum(nc),i1,i2
+!********************
+         do nn=1,2
+!********************
+         read(359,*) nv4,nv3,nv2,nv1
+         read(359,*) nboundtag
+           imatch=0
+           if(nboundtag.eq.2) then
+              invec1(1)=nv1
+              invec1(2)=nv2
+              invec1(3)=nv3
+              invec1(4)=nv4
+              call isort(invec1,4)
+           do nff=NIFACES,nf
+              invec2(1)=nvf(nff,1)
+              invec2(2)=nvf(nff,2)
+              invec2(3)=nvf(nff,3)
+              invec2(4)=nvf(nff,4)
+              call isort(invec2,4)
+!
+              if(invec1(1).eq.invec2(1).and.invec1(2).eq.invec2(2).and.
+     &           invec1(3).eq.invec2(3).and.invec1(4).eq.invec2(4)) then
+
+                nfacecell(nff,2)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
+                ntag(nff)=nboundtag
+                imatch=1
+                GO TO 337 
+              endif
+           enddo
+337    CONTINUE 
+           endif
+              if(imatch.eq.0) then
+                nf=nf+1
+                nvf(nf,1)=nv1
+                nvf(nf,2)=nv2
+                nvf(nf,3)=nv3
+                nvf(nf,4)=nv4
+                nfacecell(nf,1)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
+                ntag(nf)=nboundtag
+              endif
+!********************
+         enddo
+!********************
+       enddo
+      close(359)
+!
+      NIJFACES=nf 
+!
+      open(359,file='cellfacedataK.dat')
+      read(359,*) ncells
+      do nc=1,ncells
+         read(359,*) cellnum(nc),i1,i2
+!********************
+         do nn=1,2
+!********************
+         read(359,*) nv4,nv3,nv2,nv1
+         read(359,*) nboundtag
+           imatch=0
+           if(nboundtag.eq.2) then
+              invec1(1)=nv1
+              invec1(2)=nv2
+              invec1(3)=nv3
+              invec1(4)=nv4
+              call isort(invec1,4)
+           do nff=NIJFACES,nf
+              invec2(1)=nvf(nff,1)
+              invec2(2)=nvf(nff,2)
+              invec2(3)=nvf(nff,3)
+              invec2(4)=nvf(nff,4)
+              call isort(invec2,4)
+!
+              if(invec1(1).eq.invec2(1).and.invec1(2).eq.invec2(2).and.
+     &           invec1(3).eq.invec2(3).and.invec1(4).eq.invec2(4)) then
+
+                nfacecell(nff,2)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
+                ntag(nff)=nboundtag
+                imatch=1
+                GO TO 338 
+              endif
+           enddo
+338   CONTINUE 
+           endif
+              if(imatch.eq.0) then
+                nf=nf+1
+                nvf(nf,1)=nv1
+                nvf(nf,2)=nv2
+                nvf(nf,3)=nv3
+                nvf(nf,4)=nv4
+                nfacecell(nf,1)=cellnum(nc)
+           nfacescell(cellnum(nc))=nfacescell(cellnum(nc))+1  
+           ncellfaces(cellnum(nc),nfacescell(cellnum(nc)))=nf
+                ntag(nf)=nboundtag
+              endif
+!********************
+         enddo
+!********************
+       enddo
+       close(359) 
 !
        DEALLOCATE(invec1,invec2)
 !
        NFACES=nf
       write(6,607) nfaces
 607   format('NFACES        =',i8)
+!
+      GO TO 339 
 !
        do nc=1,ncells
          ic=0
@@ -400,6 +540,14 @@ c
            endif
          enddo
        enddo
+!
+339   CONTINUE 
+!
+       do nc=1,ncells
+          if(nfacescell(nc).ne.6) then
+             print*, nc,nfacescell(nc)
+          endif
+       enddo 
 !
 ! CHECK FOR HALO CELLS TO ADD ON
 !
@@ -533,6 +681,7 @@ c
       DEALLOCATE(xv)
       DEALLOCATE(yv)
       DEALLOCATE(zv)
+      DEALLOCATE(nfacescell)
 
       DEALLOCATE(i1tag)
       DEALLOCATE(i2tag)
@@ -544,7 +693,7 @@ c
       DEALLOCATE(nptsj)
       DEALLOCATE(nptsk)
 !
-      call system('rm cellfacedata.dat')
+      call system('rm cellfacedat*')
       call system('rm facescells.dat')
       stop
 !
