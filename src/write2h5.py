@@ -18,7 +18,7 @@ faceType_data = np.loadtxt('faceType.txt', dtype='i', skiprows=1)
 nodeVertex_data = np.loadtxt('nodeVertex.txt', dtype='d', skiprows=1)
 
 # Read in Attribute data
-attribute_data = np.loadtxt('cellFace.txt', dtype='i', max_rows=1)
+attribute_data = np.loadtxt('cellFace.txt', dtype='i', skiprows=1)
 
 # Identify dataset size
 l_cellFace=len(cellFace_data)
