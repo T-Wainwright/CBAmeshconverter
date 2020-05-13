@@ -21,14 +21,14 @@ nodeVertex_data = np.loadtxt('nodeVertex.txt', dtype='d', skiprows=1)
 attribute_data = np.loadtxt('cellFace.txt', dtype='i', max_rows=1)
 
 # Identify dataset size
-l_cellFace=len(cellFace_data);
-l_cellType=len(cellType_data);
-l_faceBC=len(faceBC_data);
-l_faceCell=len(faceCell_data);
-l_faceInfo=len(faceInfo_data);
-l_faceNodes=len(faceNodes_data);
-l_faceType=len(faceType_data);
-l_nodeVertex=len(nodeVertex_data);
+l_cellFace=len(cellFace_data)
+l_cellType=len(cellType_data)
+l_faceBC=len(faceBC_data)
+l_faceCell=len(faceCell_data)
+l_faceInfo=len(faceInfo_data)
+l_faceNodes=len(faceNodes_data)
+l_faceType=len(faceType_data)
+l_nodeVertex=len(nodeVertex_data)
 
 # Create file type
 name = sys.argv[1] #input()

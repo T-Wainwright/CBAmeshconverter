@@ -617,8 +617,10 @@ c
       do nf=1,nfaces
         if(ntag(nf).eq.-2) then
           write(100,*) 1,0
-        elseif(ntag(nf).eq.-1.or.ntag(nf).eq.0) then
-          write(100,*) 4,0 !Wall
+        elseif(ntag(nf).eq.0) then
+          write(100,*) 3,0 !Wall
+        elseif(ntag(nf).eq.-1) then
+          write(100,*) 4,0 !Aerodynamic surface
         elseif(ntag(nf).eq.1) then
           write(100,*) 2,0 !Farfield
         elseif(ntag(nf).eq.2) then
